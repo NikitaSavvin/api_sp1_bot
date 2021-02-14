@@ -1,3 +1,5 @@
+'''Альтернативное исполнение домашней работы'''
+
 import logging
 import os
 import time
@@ -17,7 +19,6 @@ TEXT_REJECTED = 'К сожалению в работе нашлись ошибк
 TEXT_REIEWIG = 'Работа взята в ревью'
 TEXT_APPROV = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'
 
-
 def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
     status = homework.get('status')
@@ -29,11 +30,16 @@ def parse_homework_status(homework):
         'reviewing': TEXT_REIEWIG,
         'approved': TEXT_APPROV,
     }
-    if status == 'rejected':
+    if status in pages:
         verdict = pages[status]
-    elif status == 'approved':
-        verdict = pages[status]
-    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+        if status == 'approved':
+            answer = f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+        else:
+            answer = pages[status]
+    else:
+        answer = f'Статус работы "{homework_name}" неизвестен'
+    return answer
+# Такое исполнение функции parse_homework_status мне кажется более универсальным, но оно не проходит pytest 
 
 
 def get_homework_statuses(current_timestamp):
