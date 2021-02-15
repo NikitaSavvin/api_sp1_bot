@@ -16,22 +16,25 @@ URL_YP = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
 TEXT_REJECTED = 'К сожалению в работе нашлись ошибки.'
 TEXT_REIEWIG = 'Работа взята в ревью'
 TEXT_APPROV = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'
+pages = {
+    'rejected': TEXT_REJECTED,
+    'reviewing': TEXT_REIEWIG,
+    'approved': TEXT_APPROV,
+}
 
 
 def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
     status = homework.get('status')
     if not homework_name or not status:
-        message = 'Не удалось получить статус'
+        if not homework_name:
+            message = 'Не удалось получить имя домашки'
+        elif not status:
+            message = 'Не удалось получить статус домашки'
+        else:
+            message = 'Не удалось получить данные по домашке'
         raise Exception(message)
-    pages = {
-        'rejected': TEXT_REJECTED,
-        'reviewing': TEXT_REIEWIG,
-        'approved': TEXT_APPROV,
-    }
-    if status == 'rejected':
-        verdict = pages[status]
-    elif status == 'approved':
+    if status in pages:
         verdict = pages[status]
     return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
@@ -44,9 +47,8 @@ def get_homework_statuses(current_timestamp):
             URL_YP, params=params, headers=headers
         )
         return homework_statuses.json()
-    except requests.RequestException as error:
-        logging.exception("Exception occurred")
-        raise error
+    except requests.RequestException:
+        logging.error("Ошибка get запроса")
 
 
 def send_message(message, bot_client):
@@ -62,10 +64,9 @@ def main():
     while True:
         try:
             new_homework = get_homework_statuses(current_timestamp)
-            if new_homework.get('homeworks'):
-                send_message(parse_homework_status(
-                    new_homework.get('homeworks')[0]), bot_client
-                )
+            new_HW = new_homework.get('homeworks')
+            if new_HW:
+                send_message(parse_homework_status(new_HW[0]), bot_client)
             current_timestamp = new_homework.get(
                 'current_date', current_timestamp
             )
@@ -73,6 +74,8 @@ def main():
 
         except Exception as e:
             print(f'Бот столкнулся с ошибкой: {e}')
+            send_message(e, bot_client)
+            logging.info('Сообщение отправлено')
             time.sleep(5)
 
 
