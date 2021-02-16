@@ -14,7 +14,7 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 URL_YP = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
 TEXT_REJECTED = 'К сожалению в работе нашлись ошибки.'
-TEXT_REIEWIG = 'Работа взята в ревью'
+TEXT_REIEWIG = ' взята в ревью'
 TEXT_APPROV = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'
 pages = {
     'rejected': TEXT_REJECTED,
@@ -34,9 +34,15 @@ def parse_homework_status(homework):
         else:
             message = 'Не удалось получить данные по домашке'
         raise Exception(message)
-    if status in pages:
+    if status in pages and status != 'reviewing':
         verdict = pages[status]
-    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+        answer = f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+    elif status == 'reviewing':
+        verdict = pages[status]
+        answer = f'Работа "{homework_name}"!\n\n{verdict}'
+    elif status not in pages:
+        answer = f'Статус работы "{homework_name}" неизвестен'
+    return answer
 
 
 def get_homework_statuses(current_timestamp):
@@ -47,8 +53,8 @@ def get_homework_statuses(current_timestamp):
             URL_YP, params=params, headers=headers
         )
         return homework_statuses.json()
-    except requests.RequestException:
-        logging.error("Ошибка get запроса")
+    except requests.RequestException as error:
+        raise error
 
 
 def send_message(message, bot_client):
@@ -73,9 +79,8 @@ def main():
             time.sleep(300)
 
         except Exception as e:
-            print(f'Бот столкнулся с ошибкой: {e}')
             send_message(e, bot_client)
-            logging.info('Сообщение отправлено')
+            logging.error('Ошибка при отправке сообщения')
             time.sleep(5)
 
 
