@@ -21,11 +21,19 @@ pages = {
     'reviewing': TEXT_REIEWIG,
     'approved': TEXT_APPROV,
 }
+dictionary = {
+    'rejected': 'У вас проверили работу "{name}"!\n\n{verdict}',
+    'reviewing': 'Работа "{name}"!\n\n{verdict}',
+    'approved': 'У вас проверили работу "{name}"!\n\n{verdict}',
+}
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
     status = homework.get('status')
+    verdict = pages[status]
     if not homework_name or not status:
         if not homework_name:
             message = 'Не удалось получить имя домашки'
@@ -34,15 +42,15 @@ def parse_homework_status(homework):
         else:
             message = 'Не удалось получить данные по домашке'
         raise Exception(message)
-    if status in pages and status != 'reviewing':
-        verdict = pages[status]
-        answer = f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
-    elif status == 'reviewing':
-        verdict = pages[status]
-        answer = f'Работа "{homework_name}"!\n\n{verdict}'
-    elif status not in pages:
-        answer = f'Статус работы "{homework_name}" неизвестен'
-    return answer
+    if status in dictionary:
+        message_user = dictionary[status].format(
+            name=homework_name, verdict=verdict
+        )
+    else:
+        message_user = (
+            'Статус работы "{name}" неизвестен'.format(name=homework_name)
+        )
+    return message_user
 
 
 def get_homework_statuses(current_timestamp):
@@ -54,18 +62,19 @@ def get_homework_statuses(current_timestamp):
         )
         return homework_statuses.json()
     except requests.RequestException as error:
+        logger.exception("Произошло исключение")
         raise error
 
 
 def send_message(message, bot_client):
-    logging.info('Сообщение отправлено в Telegram')
+    logger.info('Сообщение отправлено в Telegram')
     return bot_client.send_message(chat_id=CHAT_ID, text=message)
 
 
 def main():
     bot_client = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    logging.debug('Запуск NextBot')
+    logger.debug('Запуск NextBot')
 
     while True:
         try:
@@ -80,7 +89,7 @@ def main():
 
         except Exception as e:
             send_message(e, bot_client)
-            logging.error('Ошибка при отправке сообщения')
+            logger.error('Ошибка при отправке сообщения') # тут хз что писать, не понятно что за исключение ловит
             time.sleep(5)
 
 
