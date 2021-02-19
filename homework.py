@@ -33,7 +33,6 @@ logger.setLevel(logging.DEBUG)
 def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
     status = homework.get('status')
-    verdict = pages[status]
     if not homework_name or not status:
         if not homework_name:
             message = 'Не удалось получить имя домашки'
@@ -42,6 +41,11 @@ def parse_homework_status(homework):
         else:
             message = 'Не удалось получить данные по домашке'
         raise Exception(message)
+    try:
+        verdict = pages[status]
+    except KeyError:
+        verdict = None
+        print('status=None или status не найден в словаре')
     if status in dictionary:
         message_user = dictionary[status].format(
             name=homework_name, verdict=verdict
