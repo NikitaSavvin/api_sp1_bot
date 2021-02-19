@@ -89,7 +89,7 @@ def main():
 
         except Exception as e:
             send_message(e, bot_client)
-            logger.error('Ошибка при отправке сообщения') # тут хз что писать, не понятно что за исключение ловит
+            logger.error('Ошибка при получении данных')
             time.sleep(5)
 
 
