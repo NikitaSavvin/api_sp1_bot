@@ -45,7 +45,7 @@ def parse_homework_status(homework):
         verdict = pages[status]
     except KeyError:
         verdict = None
-        print('status=None или status не найден в словаре')
+        logger.error('status=None или status не найден в словаре')
     if status in dictionary:
         message_user = dictionary[status].format(
             name=homework_name, verdict=verdict
